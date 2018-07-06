@@ -200,8 +200,9 @@ NODE and its children from the index."
    (lambda (_ node) (treemacs-shadow-node->invalidate-pos node))
    treemacs-shadow-index))
 
-(defun treemacs--recursive-refresh-descent (node)
+(defun treemacs--recursive-refresh-descent (project node)
   "The recursive descent implementation of `treemacs--recursive-refresh'.
+NODE must be inside PROJECT.
 If NODE is marked for refresh and in an open state (since it could have been
 collapsed in the meantime) it will simply be collapsed and re-expanded. If NODE
 is node marked its children will be recursively investigated instead.
@@ -223,14 +224,13 @@ parents' git status can be updated."
                     #'treemacs-shadow-node->reset-refresh-flag))
               (dolist (delete deletes)
                 (-let [(file-path . _)  delete]
-                  ;; FIXME find project once
                   (treemacs-with-writable-buffer
-                   (treemacs-goto-button file-path)
+                   (treemacs-goto-button file-path project)
                    (kill-whole-line)))))))
       (dolist (child (treemacs-shadow-node->children node))
         (setq refreshed-nodes
               (nconc refreshed-nodes
-                     (treemacs--recursive-refresh-descent child)))))
+                     (treemacs--recursive-refresh-descent project child)))))
     refreshed-nodes))
 
 (defun treemacs--recursive-refresh ()
@@ -249,7 +249,7 @@ instead."
                 (treemacs--do-for-all-child-nodes root-node #'treemacs-shadow-node->reset-refresh-flag)
                 (treemacs--do-refresh (current-buffer) project))
             (dolist (root-child (treemacs-shadow-node->children root-node))
-              (treemacs--recursive-refresh-descent root-child))))))
+              (treemacs--recursive-refresh-descent project root-child))))))
     (treemacs-log "Finished Recursive Descent Refresh in %s time\n" (- (float-time) start))))
 
 (provide 'treemacs-structure)
