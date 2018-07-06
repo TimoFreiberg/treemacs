@@ -217,7 +217,10 @@ parents' git status can be updated."
                  (--separate (eq 'deleted (cdr it))
                              (treemacs-shadow-node->refresh-flag node))]
             (treemacs-log "Separated lists %s %s" deletes other-flags)
-            (if other-flags
+            (if (or other-flags
+                    ;; Heuristic: updating many single files is less efficient than just rerendering
+                    ;; We draw the line at 10 files
+                    (> (length deletes) 10))
                 (progn
                   (treemacs--refresh-dir (treemacs-shadow-node->key node))
                   (treemacs--do-for-all-child-nodes node
